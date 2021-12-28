@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -37,13 +36,37 @@ func NewRecipeHandler(c *gin.Context) {
 }
 
 func ListRecipesHandler(c *gin.Context) {
-	fmt.Println(recipes)
 	c.JSON(http.StatusOK, recipes)
+}
+
+func UpdateRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+	var recipe Recipe
+	if err := c.ShouldBindJSON(&recipe); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	index := -1
+	for i := 0; i < len(recipes); i++ {
+		if recipes[i].ID == id {
+			index = i
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Recipe Not Found"})
+		return
+	}
+	recipe.ID = recipes[index].ID
+	recipes[index] = recipe
+	c.JSON(http.StatusOK, recipe)
 }
 
 func main() {
 	router := gin.Default()
 	router.POST("/recipes", NewRecipeHandler)
 	router.GET("/recipes", ListRecipesHandler)
+	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	router.Run()
 }
